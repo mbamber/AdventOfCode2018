@@ -12,7 +12,7 @@ def main():
     for y in range(0, 1000):
         fabric_row = []
         for x in range(0, 1000):
-            fabric_row.append(0)
+            fabric_row.append([])
         fabric.append(fabric_row)
 
     # Plot each rectangle
@@ -26,12 +26,17 @@ def main():
         total=overlapping
     ))
 
+    intact_id = get_intact_claim(fabric)
+    print('The intact claim ID is {id}'.format(
+        id=intact_id
+    ))
+
 def plot_rect(fabric, rect):
     rect_details = get_rect_details(rect)
 
     for y in range(rect_details['y'], rect_details['y'] + rect_details['height']):
         for x in range(rect_details['x'], rect_details['x'] + rect_details['width']):
-            fabric[y][x] += 1
+            fabric[y][x].append(rect_details['id'])
 
     return fabric
 
@@ -50,10 +55,29 @@ def count_overlapping(fabric):
     total = 0
     for row in fabric:
         for cell in row:
-            if cell > 1:
+            if len(cell) > 1:
                 total += 1
 
     return total
+
+def get_intact_claim(fabric):
+
+    id_num = 1
+    id_string = '#{id_num}'.format(id_num=id_num)
+    while True:
+        cells = get_cells_with_id(fabric, id_string)
+        overlapping_cells = filter(lambda cell: len(cell) > 1, cells)
+        if len(overlapping_cells) == 0:
+            return id_string
+        else:
+            id_num += 1
+            id_string = '#{id_num}'.format(id_num=id_num)
+
+def get_cells_with_id(fabric, id):
+    cells = []
+    for row in fabric:
+        cells = cells + filter(lambda cell: id in cell, row)
+    return cells
 
 def print_fabric(fabric):
     for row in fabric:
