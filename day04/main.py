@@ -31,20 +31,21 @@ def main():
             if not fell_asleep_at == None:
                 sleep_record = log_minutes_asleep(sleep_record, curr_guard, fell_asleep_at, record_minutes)
 
-    most_sleepy_guard = get_most_sleepy_guard(sleep_record)
-    print('The most sleepy guard is #{guard_id} who slept for a total of {minutes_asleep} minutes'.format(
-        guard_id=most_sleepy_guard[0],
-        minutes_asleep=most_sleepy_guard[1]
-    ))
+    most_sleepy_minute_by_guard = get_most_sleepy_minute_by_guard(sleep_record)
+    most_sleepy_minute = (None, (None, 0))
+    for guard_id in most_sleepy_minute_by_guard:
+        sleepiest_minute = most_sleepy_minute_by_guard[guard_id]
+        if sleepiest_minute[1] > most_sleepy_minute[1][1]:
+            most_sleepy_minute = (guard_id, sleepiest_minute)
 
-    most_sleepy_minute_for_guard = get_most_sleepy_minute_for_guard(sleep_record[most_sleepy_guard[0]])
-    print('The most sleepy minute for that guard was {minute} for which they were asleep a total of {minutes_asleep} minutes'.format(
-        minute=most_sleepy_minute_for_guard[0],
-        minutes_asleep=most_sleepy_minute_for_guard[1]
+    print('The most sleepy minute was {minute} on which guard #{guard_id} was asleep for {asleep_minutes} minutes'.format(
+        minute=most_sleepy_minute[1][0],
+        guard_id=most_sleepy_minute[0],
+        asleep_minutes=most_sleepy_minute[1][1]
     ))
 
     print('The answer to the puzzle is therefore {answer}'.format(
-        answer=(int(most_sleepy_guard[0]) * most_sleepy_minute_for_guard[0])
+        answer=(int(most_sleepy_minute[0]) * most_sleepy_minute[1][0])
     ))
 
 def log_minutes_asleep(records, guard_id, fell_asleep_at, woke_up_at):
@@ -64,22 +65,17 @@ def log_minutes_asleep(records, guard_id, fell_asleep_at, woke_up_at):
 
     return records
 
-def get_most_sleepy_guard(all_records):
-    most_sleepy_guard = (None, 0)
-    for guard in all_records:
-        minutes_asleep = reduce(lambda x, y: x + y, all_records[guard].values())
-        if minutes_asleep > most_sleepy_guard[1]:
-            most_sleepy_guard = (guard, minutes_asleep)
+def get_most_sleepy_minute_by_guard(records):
+    most_sleepy_minutes = {}
+    for guard_id in records:
+        record = records[guard_id]
+        most_sleepy_minute = (None, 0)
+        for minute in record:
+            if record[minute] > most_sleepy_minute[1]:
+                most_sleepy_minute = (minute, record[minute])
+        most_sleepy_minutes[guard_id] = most_sleepy_minute
 
-    return most_sleepy_guard
-
-def get_most_sleepy_minute_for_guard(guard_sleep_record):
-    max_sleepy_minute = (None, 0)
-    for minute in guard_sleep_record:
-        if guard_sleep_record[minute] > max_sleepy_minute[1]:
-            max_sleepy_minute = (minute, guard_sleep_record[minute])
-
-    return max_sleepy_minute
+    return most_sleepy_minutes
 
 if __name__ == '__main__':
     main()
