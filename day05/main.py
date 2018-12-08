@@ -9,6 +9,28 @@ def main():
 
     polymer = file_contents[0].rstrip()
 
+    curr_shortest_polymer = (None, 9999999999)
+    for char in "abcdefghijklmnopqrstuvwxyz":
+        curr_polymer = polymer
+        curr_polymer = curr_polymer.replace(char, '')
+        curr_polymer = curr_polymer.replace(char.upper(), '')
+        reacted_polymer = react_polymer(curr_polymer)
+
+        print('Length of polymer without {removed_unit} is {length}'.format(
+            removed_unit=char,
+            length=len(reacted_polymer)
+        ))
+
+        if len(reacted_polymer) < curr_shortest_polymer[1]:
+            curr_shortest_polymer = (reacted_polymer, len(reacted_polymer))
+
+    print('The shortest polymer is {new_polymer} which has {num_units} units'.format(
+        new_polymer=curr_shortest_polymer[0],
+        num_units=curr_shortest_polymer[1]
+    ))
+
+def react_polymer(polymer):
+
     # Keep looping through the polymer until we didnt make a change
     did_make_change_in_pass = True
     while did_make_change_in_pass:
@@ -36,11 +58,7 @@ def main():
 
         polymer = new_polymer
 
-    print('The new polymer is {new_polymer} which has {num_units} units'.format(
-        new_polymer=polymer,
-        num_units=len(polymer)
-    ))
-
+    return polymer
 
 # See if two units react, and either return an empty string (because they anihilated themselves)
 # or the first unit because there was no reaction
