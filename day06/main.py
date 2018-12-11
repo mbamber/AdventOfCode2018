@@ -11,6 +11,8 @@ def main():
     with open('input', 'rb') as in_file:
         file_contents = in_file.readlines()
 
+    threshold = 10000
+
     coordinate_pairs = []
 
     # Find the max width and height
@@ -38,83 +40,23 @@ def main():
         grid[coordinate_pair[1]][coordinate_pair[0]] = curr_coord_num
         curr_coord_num += 1
 
-    # Fill in the grid based on the shortest Manhattan distances
+    coords_less_than_threshold = []
+
+    # Loop through each point, and record which coordinates have a total manhatten
+    # distance less than the threshold
     for y in range(0, len(grid)):
         for x in range(0, len(grid[y])):
             curr_coord = (x, y)
-            if grid[y][x] == 0:
-                nearest_point = get_min_manhatten_distance(curr_coord, coordinate_pairs, grid)
-                grid[y][x] = -1 * nearest_point
+            curr_total = 0
+            for coord in coordinate_pairs:
+                curr_total += get_manhatten_distance(coord, curr_coord)
+            if curr_total < threshold:
+                coords_less_than_threshold.append(curr_coord)
 
-    # Now work out which points have infinite areas
-    finite_areas = get_non_infinite_points(grid, len(coordinate_pairs))
-
-    areas = count_points(grid)
-
-    largest_finite_area = get_largest_finite_area(areas, finite_areas)
-    print('The largest area is {area_num} with size {size}'.format(
-        area_num=largest_finite_area[0],
-        size=largest_finite_area[1]
+    print('The size of the area with total manhatten distance less than {threshold} is {size}'.format(
+        threshold=threshold,
+        size=len(coords_less_than_threshold)
     ))
-
-def get_largest_finite_area(areas, finite_points):
-    curr_largest_area = (None, 0)
-    for point in finite_points:
-        if areas[point] > curr_largest_area[1]:
-            curr_largest_area = (point, areas[point])
-
-    return curr_largest_area
-
-def count_points(grid):
-
-    areas = {}
-
-    for row in grid:
-        for cell in row:
-            curr_cell_value = abs(cell)
-            if curr_cell_value not in areas:
-                areas[curr_cell_value] = 1
-            else:
-                areas[curr_cell_value] += 1
-
-    return areas
-
-# Work out which points have a finite area, as they are the ones who dont have a cell on the edge of the grid
-def get_non_infinite_points(grid, num_points):
-    finite_areas = range(1, num_points + 1)
-    for y in range(0, len(grid) - 1):
-        for x in range(0, len(grid[0]) - 1):
-            if not (y == 0 or x == 0 or y == (len(grid) - 1) or x == (len(grid) - 1)):
-                continue
-
-            to_remove = abs(grid[y][x])
-            try:
-                finite_areas.remove(to_remove)
-            except ValueError as ve:
-                pass
-
-    return finite_areas
-
-# For a given coord, get the nearest point in coords from the grid using the Manhattan distance
-def get_min_manhatten_distance(coord, coords, grid):
-
-    curr_min = (None, 99999999999999999)
-    is_duplicate = False
-
-    for curr_coord in coords:
-        curr_distance = get_manhatten_distance(coord, curr_coord)
-        if curr_distance < curr_min[1]:
-            curr_min = (curr_coord, curr_distance)
-            is_duplicate = False
-            continue
-        if curr_distance == curr_min[1]:
-            is_duplicate = True
-
-    if is_duplicate:
-        return 0
-
-    min_point = curr_min[0]
-    return grid[min_point[1]][min_point[0]]
 
 def get_manhatten_distance(A, B):
     delta_x = abs(A[0] - B[0])
