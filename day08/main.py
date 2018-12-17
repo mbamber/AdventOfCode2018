@@ -22,8 +22,8 @@ def main():
 
     root, data = generate_subtrees(root, initial_data)
 
-    print('The whole tree has sum of metadata {metadata_sum}'.format(
-        metadata_sum=root.get_metadata_sum()
+    print('The root node has value: {value}'.format(
+        value=root.value()
     ))
 
 # Generate a tree recursively from the given set of data
@@ -80,6 +80,18 @@ class Tree:
 
     def is_tree_complete(self):
         return len(self.subtrees()) == self.num_subtrees and len(self._metadata) == self.num_metadata
+
+    def value(self):
+        if len(self.subtrees()) == 0:
+            return sum(self._metadata)
+
+        st_values = 0
+        for md in self.metadata():
+            i = md - 1
+            if len(self.subtrees()) > i:
+                st_values += self.subtrees()[i].value()
+
+        return st_values
 
     def __str__(self):
         return '<metadata: {metadata}, subtrees: {subtrees}, num_metadata: {num_metadata}, num_subtrees: {num_subtrees}>'.format(
