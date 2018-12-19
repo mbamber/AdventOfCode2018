@@ -1,6 +1,11 @@
 #! /usr/bin
 # -*- coding: UTF-8 -*-
 
+# NOTE: Unless you have a very long time to spare, you will need to `pip install blist`
+# as this has O(log n) complexity for adding and removing elements to a list,
+# instead of the default O(n)
+from blist import blist
+
 def main():
 
     # Read in the input
@@ -9,6 +14,7 @@ def main():
 
     num_players = int(file_contents[0].rstrip().split('; ')[0].split(' ')[0])
     final_marble_points = int(file_contents[0].rstrip().split('; ')[1].split(' ')[4])
+    final_marble_points *= 100
 
     # Initialize the scoreboard
     scoreboard = {}
@@ -43,7 +49,7 @@ def main():
 class Circle(object):
 
     def __init__(self, initial_element):
-        self._elements = [initial_element]
+        self._elements = blist([initial_element])
         self._current_element_index = 0
 
     def current_element(self):
