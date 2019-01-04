@@ -1,6 +1,9 @@
 #! /usr/bin
 # -*- coding: UTF-8 -*-
 
+from __future__ import print_function
+import sys
+
 def main():
 
     # Read in the input
@@ -9,15 +12,28 @@ def main():
 
     grid_serial_number = int(file_contents[0].rstrip())
 
-    grid = FuelGrid(300, grid_serial_number)
-    subgrid = grid.subgrid_with_highest_fuel_value()
-    print 'The coordinates of the top left cell of the subgrid with the highest fuel value are {coordinates}.\nThe subgrid has total fuel value {fuel_value}'.format(
+    max_d = 300
+    grid = FuelGrid(max_d, grid_serial_number)
+
+    max_subgrid = (None, -99999999, 0)
+    for d in range(0, max_d):
+        print('Considering all {dimension}x{dimension} grids'.format(
+            dimension=d + 1
+        ))
+        for y in range(0, max_d - d):
+            for x in range(0, max_d - d):
+                subgrid_sum = grid.summed_area_table().subgrid_sum(x + 1, y + 1, d)
+                if subgrid_sum > max_subgrid[1]:
+                    max_subgrid = ((x + 1, y + 1), subgrid_sum, d)
+
+    print('The coordinates of the top left cell of the subgrid with the highest fuel value are {coordinates}.\nThe grid has total power {total_power}.\nThe grid size is {dimensions}.\nThe puzzle solution is therefore: {coordinates},{dimensions}'.format(
         coordinates='{x},{y}'.format(
-            x=subgrid[0][0],
-            y=subgrid[0][1]
+            x=max_subgrid[0][0],
+            y=max_subgrid[0][1]
         ),
-        fuel_value=subgrid[1]
-    )
+        total_power=max_subgrid[1],
+        dimensions=max_subgrid[2]
+    ))
 
 class FuelGrid():
 
@@ -33,31 +49,29 @@ class FuelGrid():
             fuel_grid.append(fuel_row)
 
         self._fuel_grid = fuel_grid
+        self._summed_area_table = Summed_Area_Table(self)
 
-    def subgrid_with_highest_fuel_value(self, dimension=3):
-        highest = (None, -5*dimension*dimension - 1)
-        for y in range(0, self._dimension - dimension):
-            for x in range(0, self._dimension - dimension):
-                fuel_value = self._sum_fuel_value(x, y, dimension)
-                if fuel_value > highest[1]:
-                    highest = ((x+1, y+1), fuel_value)
-
-        return highest
-
-    def _sum_fuel_value(self, x, y, dimension):
-        total = 0
-        for y_2 in range(y, y + dimension):
-            for x_2 in range(x, x + dimension):
-                total += self._fuel_value_at(x_2, y_2)
-
-        return total
-
-    def _fuel_value_at(self, x, y):
+    def fuel_value_at(self, x, y):
         return (self._fuel_grid[y][x]).power_level()
 
     def draw(self):
         for row in self._fuel_grid:
-            print row
+            print(row)
+
+    def draw_subgrid(self, min_x, min_y, d):
+        for y in range(min_y - 1, min_y - 1 + d):
+            for x in range(min_x - 1, min_x - 1 + d):
+                print('{val} '.format(
+                    val=self._fuel_grid[y][x]
+                ).rjust(4), end='')
+            print('')
+
+    def summed_area_table(self):
+        return self._summed_area_table
+
+    def __len__(self):
+        return self._dimension
+
 
 class FuelCell():
 
@@ -90,6 +104,61 @@ class FuelCell():
 
     def __repr__(self):
         return str(self)
+
+class Summed_Area_Table:
+
+    def __init__(self, grid):
+        sat = []
+        for y in range(0, len(grid)):
+            row = []
+            for x in range(0, len(grid)):
+                row.append(None)
+            sat.append(row)
+
+        for y in range(0, len(grid)):
+            for x in range(0, len(grid)):
+                v, sat = self._get_SAT_value(sat, x, y, grid)
+
+        self._sat = sat
+
+    # Work out the value of the summed_area_table at the coordinate (x, y)
+    def _get_SAT_value(self, sat, x, y, grid):
+        curr_cell = grid.fuel_value_at(x - 1, y - 1)
+
+        if x == 0:
+            if y == 0:
+                v = curr_cell
+
+            else:
+                v = curr_cell + sat[y - 1][x]
+
+        else:
+            if y == 0:
+                v = curr_cell + sat[y][x - 1]
+
+            else:
+                v = curr_cell - sat[y - 1][x - 1] + sat[y][x - 1] + sat[y - 1][x]
+
+        sat[y][x] = v
+        return v, sat
+
+    def subgrid_sum(self, min_x, min_y, d):
+        return self._sat[min_y - 1][min_x - 1] + \
+            self._sat[min_y - 1 + d][min_x - 1 + d] - \
+            self._sat[min_y - 1 + d][min_x - 1] - \
+            self._sat[min_y - 1][min_x - 1 + d]
+
+    def draw(self):
+        for row in self._sat:
+            print(row)
+
+    def draw_subgrid(self, min_x, min_y, d):
+        for y in range(min_y - 1, min_y - 1 + d):
+            for x in range(min_x - 1, min_x - 1 + d):
+                print('{val} '.format(
+                    val=self._sat[y][x]
+                ).rjust(4), end='')
+            print('')
 
 # Get the place value of num, as position place_num. i.e. get_place_value(x, 0)
 # will find the value of the units of x, and get_place_value(x, 2) will find the
