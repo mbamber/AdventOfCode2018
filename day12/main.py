@@ -18,10 +18,44 @@ def main():
 
     pl = PotList(initial_state, rules)
 
-    for i in range(0, 20):
-        pl.iterate()
+    stable_diff_threshold = 3
 
-    print(pl.sum_pot_nums_with_plants())
+    found_stable_diff = False
+    previous_diffs = [0]
+    prev_sum = 0
+    while not found_stable_diff:
+        pl.iterate()
+        new_sum = pl.sum_pot_nums_with_plants()
+        new_diff = new_sum - prev_sum
+
+        # Check that there are the correct amount of previous diffs, and that
+        # they are all equal
+        if len(set(previous_diffs)) == 1 and \
+            len(previous_diffs) == stable_diff_threshold:
+
+            # If they are all equal, then see if the new diff is the same too
+            if new_diff == previous_diffs[0]:
+                found_stable_diff = True
+
+        previous_diffs.append(new_diff)
+        prev_sum = new_sum
+        if len(previous_diffs) > 3:
+            del previous_diffs[0]
+
+    print('Found a stable diff (of {diff}) after {iterations} iterations.'.format(
+        diff=new_diff,
+        iterations=pl.num_iterations()
+    ))
+
+    remaining_iterations = 50000000000 - pl.num_iterations()
+    print('Remaining iterations: {remaining_iterations}'.format(
+        remaining_iterations=remaining_iterations
+    ))
+
+    remaining_sum = remaining_iterations * new_diff
+    print('{ans}'.format(
+        ans=remaining_sum + pl.sum_pot_nums_with_plants()
+    ))
 
 class PotList:
 
@@ -66,6 +100,9 @@ class PotList:
 
     def get_state(self):
         return self._state[self._padding:len(self._initial_state) + self._padding + 1]
+
+    def num_iterations(self):
+        return self._iteration_number
 
     def __str__(self):
         return self.get_state()
