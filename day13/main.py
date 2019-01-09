@@ -11,13 +11,15 @@ def main():
 
     the_map = Map(map(lambda x: x.rstrip(), file_contents))
     the_map.draw()
-    while not the_map.is_collisions():
+    while len(the_map._carts) > 1:
         the_map.move_carts()
 
-    collided_carts = the_map.get_collisions()
-    collision_locations = ", ".join(list(set(map(lambda c: str((c.x(), c.y())), collided_carts))))
-    print('There are collisions at: {locs}'.format(
-        locs=collision_locations
+
+    print('There is only one cart left at: {loc}'.format(
+        loc='({x}, {y})'.format(
+            x=the_map._carts[0].x(),
+            y=the_map._carts[0].y()
+        )
     ))
 
 
@@ -155,10 +157,15 @@ class Map():
             cart.move()
             self.turn_cart(cart)
             self.mark_collisions()
+        self.remove_colisions()
 
-            # Break out early if this cart has now collided
-            if self.is_collisions():
-                return
+    def remove_colisions(self):
+        if not self.is_collisions():
+            return
+
+        new_carts = filter(lambda c: not c.is_collided(), self._carts)
+        self._carts = new_carts
+
 
     def turn_cart(self, cart):
         cart_cell = self.cell_at(cart.x(), cart.y())
@@ -198,8 +205,12 @@ class Map():
     def mark_collisions(self):
         for cart1_index in range(0, len(self._carts) - 1):
             cart1 = self._carts[cart1_index]
+            if cart1.is_collided():
+                continue
             for cart2_index in range(cart1_index + 1, len(self._carts)):
                 cart2 = self._carts[cart2_index]
+                if cart2.is_collided():
+                    continue
                 if cart1.x() == cart2.x() and cart1.y() == cart2.y():
                     cart1.mark_collided()
                     cart2.mark_collided()
