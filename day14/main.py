@@ -9,7 +9,7 @@ def main():
     with open('input', 'rb') as in_file:
         file_contents = in_file.readlines()
 
-    input = int(file_contents[0].rstrip())
+    input = str(file_contents[0].rstrip())
 
     elf_1_index = 0
     elf_2_index = 1
@@ -17,13 +17,16 @@ def main():
     # The starting recipes
     recipe_list = [3, 7]
 
-    while not len(recipe_list) > input + 10:
+    tail = []
+    while not input in ''.join(map(str, tail)):
+        tail = recipe_list[-1 * (2 + len(input)):]
         recipe_list += generate_new_recipes(elf_1_index, elf_2_index, recipe_list)
         elf_1_index = get_next_recipe_index(elf_1_index, recipe_list)
         elf_2_index = get_next_recipe_index(elf_2_index, recipe_list)
 
-    print('The scores of the next 10 recipes are: {scores}'.format(
-        scores=''.join(map(str, recipe_list[input:input+10]))
+    print('{input} first appears after {start} recipes.'.format(
+        input=input,
+        start=''.join(map(str, recipe_list)).index(input)
     ))
 
 
