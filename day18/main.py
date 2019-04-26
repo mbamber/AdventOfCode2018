@@ -4,6 +4,7 @@
 from __future__ import print_function
 from enum import Enum
 
+
 def main():
 
     # Read the input
@@ -12,18 +13,34 @@ def main():
 
     input = map(lambda x: x.rstrip(), file_contents)
 
+    grids = []
+
     grid = Grid(input)
-    for i in range(10):
+    i = 0
+    while i < 1000000000:
         grid.simulate_minute()
+        curr_grid = grid.grid
+
+        if curr_grid in grids:
+            grid_index = grids.index(curr_grid)
+            index_diff = i - grid_index
+            full_cycles, offset = divmod(1000000000 - i, index_diff)
+            grid.grid = grids[grid_index + offset - 1]
+            break
+
+        grids.append(curr_grid)
+        i += 1
 
     print("The total resource value is {score}".format(
         score=grid.score()
     ))
 
+
 class Cell(Enum):
     tree = "|"
     lumber = "#"
     open = "."
+
 
 class Grid():
 
@@ -71,7 +88,6 @@ class Grid():
 
         return new_cell
 
-
     def adjacent_cells(self, row, col):
         cells = []
         for y in [row - 1, row, row + 1]:
@@ -102,6 +118,7 @@ class Grid():
 
     def score(self):
         return self.count(Cell.lumber) * self.count(Cell.tree)
+
 
 if __name__ == "__main__":
     main()
