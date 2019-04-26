@@ -7,7 +7,7 @@ import datetime
 import logging
 import sys
 
-from main import Cavern, Unit, Elf, Goblin, Point, PathStep
+from main import Cavern, Unit, Elf, Goblin, Point, PathStep, UnitDiedException
 
 
 class TestUnitOrdering(unittest.TestCase):
@@ -437,6 +437,109 @@ class TestPerformance(unittest.TestCase):
                             threshold=time_threshold_seconds,
                             elapsed=running_time
                         ))
+
+
+class TestElfDeath(unittest.TestCase):
+
+    def setUp(self):
+        pass
+
+    # Same examples as earlier
+    def test_examples(self):
+        example_caverns = [
+            {
+                "starting_cavern": [
+                    "#######",
+                    "#.G...#",
+                    "#...EG#",
+                    "#.#.#G#",
+                    "#..G#E#",
+                    "#.....#",
+                    "#######"
+                ],
+                "elf_attack": 15,
+                "rounds_played": 29,
+                "remaining_hit_points": 172,
+                "winning_team": Elf
+            },
+            {
+                "starting_cavern": [
+                    "#######",
+                    "#E..EG#",
+                    "#.#G.E#",
+                    "#E.##E#",
+                    "#G..#.#",
+                    "#..E#.#",
+                    "#######"
+                ],
+                "elf_attack": 4,
+                "rounds_played": 33,
+                "remaining_hit_points": 948,
+                "winning_team": Elf
+            },
+            {
+                "starting_cavern": [
+                    "#######",
+                    "#E.G#.#",
+                    "#.#G..#",
+                    "#G.#.G#",
+                    "#G..#.#",
+                    "#...E.#",
+                    "#######"
+                ],
+                "elf_attack": 15,
+                "rounds_played": 37,
+                "remaining_hit_points": 94,
+                "winning_team": Elf
+            },
+            {
+                "starting_cavern": [
+                    "#######",
+                    "#.E...#",
+                    "#.#..G#",
+                    "#.###.#",
+                    "#E#G#G#",
+                    "#...#G#",
+                    "#######"
+                ],
+                "elf_attack": 12,
+                "rounds_played": 39,
+                "remaining_hit_points": 166,
+                "winning_team": Elf
+            },
+            {
+                "starting_cavern": [
+                    "#########",
+                    "#G......#",
+                    "#.E.#...#",
+                    "#..##..G#",
+                    "#...##..#",
+                    "#...#...#",
+                    "#.G...G.#",
+                    "#.....G.#",
+                    "#########"
+                ],
+                "elf_attack": 34,
+                "rounds_played": 30,
+                "remaining_hit_points": 38,
+                "winning_team": Elf
+            },
+
+        ]
+
+        for test_data in example_caverns:
+            cavern = Cavern(
+                test_data["starting_cavern"], elf_attack=test_data["elf_attack"], ignore_elf_death=False)
+            try:
+                turns, hp, winning_team = cavern.play()
+            except UnitDiedException as ude:
+                self.fail("An elf died unexpectedly ({elf})".format(
+                    elf=ude.unit.debug_str()
+                ))
+
+            self.assertEqual(turns, test_data["rounds_played"])
+            self.assertEqual(hp, test_data["remaining_hit_points"])
+            self.assertEqual(winning_team, test_data["winning_team"])
 
 
 def enable_logging():

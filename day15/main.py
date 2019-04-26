@@ -16,18 +16,28 @@ def main():
         file_contents = in_file.readlines()
 
     raw_cavern = map(lambda x: x.rstrip(), file_contents)
-    cavern = Cavern(raw_cavern)
 
-    turns, hp, winning_team = cavern.play()
-
-    print(turns, hp, winning_team)
-    print(turns * hp)
+    i = 3
+    while True:
+        i += 1
+        try:
+            cavern = Cavern(raw_cavern, elf_attack=i, ignore_elf_death=False)
+            turns, hp, _ = cavern.play()
+        except UnitDiedException as ude:
+            logging.info("An elf died with attack power {i} ({elf})".format(
+                i=i,
+                elf=ude.unit.debug_str()
+            ))
+            continue
+        print(turns * hp)
+        return
 
 
 class Cavern():
 
-    def __init__(self, raw_cavern):
-        self.cavern, self.all_units = self._generate_cavern(raw_cavern)
+    def __init__(self, raw_cavern, elf_attack=3, ignore_elf_death=True):
+        self.cavern, self.all_units = self._generate_cavern(
+            raw_cavern, elf_attack, ignore_elf_death)
 
     def units(self, t):
         return filter(lambda u: type(u) == t, self.all_units)
@@ -39,7 +49,7 @@ class Cavern():
         return [u for u in self.units(Goblin) if u.is_alive()]
 
     # Generate the cavern in an easy to process way
-    def _generate_cavern(self, raw_cavern):
+    def _generate_cavern(self, raw_cavern, elf_attack, ignore_elf_death):
         cavern = []
         units = []
 
@@ -52,7 +62,8 @@ class Cavern():
                     units.append(Goblin(Point(x, y)))
                 elif cavern_tile == 'E':
                     row.append('.')
-                    units.append(Elf(Point(x, y)))
+                    units.append(
+                        Elf(Point(x, y), ignore_death=ignore_elf_death, attack=elf_attack))
                 else:
                     row.append(cavern_tile)
 
@@ -159,19 +170,16 @@ class Cavern():
         turn_count = 0
         while len(self.alive_elves()) > 0 and len(self.alive_goblins()) > 0:
             turn_count += 1
-            logging.info("Starting turn {turn_num}. {elf_count} Elves and {goblin_count} Goblins remaining.".format(
+            logging.info("Starting turn {turn_num} (elf attack: {elf_attack}). {elf_count} Elves and {goblin_count} Goblins remaining.".format(
                 turn_num=turn_count,
+                elf_attack=self.units(Elf)[0]._attack,
                 elf_count=len(self.alive_elves()),
                 goblin_count=len(self.alive_goblins())
             ))
-            self.step(turn_count)
-            # self.draw()
-            # self.show_hitpoints()
-            # print("")
-            # self.draw("my_map/turn_{i}".format(i=turn_count))
-            # self.show_hitpoints("my_hps/turn_{i}".format(i=turn_count))
+            was_full_round = self.step(turn_count)
 
-        turn_count = turn_count - 1
+        if not was_full_round:
+            turn_count = turn_count - 1
 
         # Work out the winning team
         winning_team = Elf if len(self.alive_elves()) > 0 else Goblin
@@ -206,7 +214,7 @@ class Cavern():
             alive_enemies = filter(lambda u: u.is_alive(), enemies)
             if len(alive_enemies) == 0:
                 logging.info("All targets are dead!")
-                return
+                return False
 
             # Try and shortcut the routefinding, by seeing if there are targets
             # adjacent to us
@@ -280,7 +288,7 @@ class Cavern():
                 target_instance = self.unit_at(nearest_target.loc)
                 unit.attack_target(target_instance)
 
-        return
+        return True
 
     # Find and return a list of all units of the given type that are adjacent to
     # the provided location
@@ -441,13 +449,14 @@ class PathStep(object):
 
 class Unit(object):
 
-    def __init__(self, location, hit_points=200, attack=3):
+    def __init__(self, location, hit_points=200, attack=3, ignore_death=True):
         super(Unit, self).__init__()
 
         self.loc = location
 
         self.hp = hit_points
         self._attack = attack
+        self.ignore_death = ignore_death
 
         self._is_alive = True
 
@@ -467,6 +476,9 @@ class Unit(object):
             u=self.debug_str()
         ))
 
+        if not self.ignore_death and self.hp <= 0:
+            raise UnitDiedException(self)
+
     def attack(self):
         return self._attack
 
@@ -483,8 +495,9 @@ class Unit(object):
 
 class Goblin(Unit):
 
-    def __init__(self, location, hit_points=200, attack=3):
-        super(Goblin, self).__init__(location, hit_points, attack)
+    def __init__(self, location, hit_points=200, attack=3, ignore_death=True):
+        super(Goblin, self).__init__(
+            location, hit_points, attack, ignore_death)
         self.targets = [Elf]
 
     def __str__(self):
@@ -493,12 +506,17 @@ class Goblin(Unit):
 
 class Elf(Unit):
 
-    def __init__(self, location, hit_points=200, attack=3):
-        super(Elf, self).__init__(location, hit_points, attack)
+    def __init__(self, location, hit_points=200, attack=3, ignore_death=True):
+        super(Elf, self).__init__(location, hit_points, attack, ignore_death)
         self.targets = [Goblin]
 
     def __str__(self):
         return 'E'
+
+
+class UnitDiedException(Exception):
+    def __init__(self, unit):
+        self.unit = unit
 
 
 if __name__ == '__main__':
