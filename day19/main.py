@@ -32,7 +32,7 @@ class Program():
     def __init__(self, ip_reg, program):
 
         self.program = program
-        self.registers = Registers([0, 0, 0, 0, 0, 0])
+        self.registers = Registers([1, 0, 0, 0, 0, 0])
         self.ip_reg = ip_reg
 
     def run(self):
